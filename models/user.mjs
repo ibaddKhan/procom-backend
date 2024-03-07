@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
+import validator from "validator";
 
 const Schema = mongoose.Schema;
 
@@ -31,13 +32,18 @@ const userSchema = new Schema({
   },
 });
 
-//signup method
+// signup method
+userSchema.statics.signup = async function (userName, email, password, phonenumber, accountnumber, type) {
+  // Check if the email is valid
+  if (!validator.isEmail(email)) {
+    throw Error("Invalid email address");
+  }
 
-userSchema.statics.signup = async function (userName, email, password,phonenumber,accountnumber,type) {
   const exists = await this.findOne({ userName });
   if (exists) {
     throw Error("User Name already in use.");
   }
+
   const salt = await bcrypt.genSalt(10);
   const hash = await bcrypt.hash(password, salt);
 
@@ -52,21 +58,19 @@ userSchema.statics.signup = async function (userName, email, password,phonenumbe
   return user;
 };
 
-//login method
-
+// login method
 userSchema.statics.login = async function (userName, password) {
-  if ((!userName, !password)) {
-    throw Error("User Name and Password is Required");
+  if (!userName || !password) {
+    throw Error("User Name and Password are required");
   }
 
-  //finding user in database
+  // finding user in the database
   const user = await this.findOne({ userName });
   if (!user) {
     throw Error("Incorrect user name");
   }
 
-  //compairing password
-
+  // comparing password
   const match = await bcrypt.compare(password, user.password);
   if (!match) {
     throw Error("Incorrect password");
